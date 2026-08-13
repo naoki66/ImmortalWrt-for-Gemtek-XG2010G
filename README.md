@@ -15,12 +15,11 @@
 | 10G 网口X2 | 2XRTL8261N，MDIO 地址 5 和 8 |
 | 2.5G 网口X1 | Airoha EN8811H，MDIO 地址 `0xf` |
 | 1G 网口X1 | 内置交换机 ePHY，实测仅 LAN4 出线 |
-| PON | EN7572 BOSA，原厂 XGSPON，实测支持XGPON |
+| PONX1 | EN7572 BOSA，原厂 XGSPON，实测支持XGPON |
 | 无线/USB/eMMC | 当前硬件资料显示无可用模块或物理接口 |
 
 ## 端口与启动注意事项
 
-- 原厂 `serdes_ethernet=411` 是实机参数，不要使用未经验证的 `421`。
 - 原厂 NAND 布局与本项目 UBI 布局不同。刷写前备份 `bootloader`、`uenv`、`dsd`、`tclinux_slave` 和 `art`。
 - U-Boot 可能通过 `bootflag` 在主/备系统间切换。任何升级操作都应保留可恢复的串口/TFTP/HTTP Recovery 路径。
 - XG2010G 的 PON 模式、BOSA 校准、SLIC/语音和 10G PHY 链路尚未在 ImmortalWrt 上完成实机验证。
