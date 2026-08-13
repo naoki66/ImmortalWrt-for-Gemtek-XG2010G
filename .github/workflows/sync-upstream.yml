@@ -1,0 +1,27 @@
+name: Sync Upstream ImmortalWrt
+
+on:
+  schedule:
+    - cron: '0 19 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure Git
+        run: |
+          git config user.email actions@github.com
+          git config user.name 'GitHub Actions'
+      - name: Merge upstream
+        run: |
+          git remote add upstream https://github.com/immortalwrt/immortalwrt.git 2>/dev/null || true
+          git fetch upstream master
+          git merge --no-edit upstream/master
+          git push origin master

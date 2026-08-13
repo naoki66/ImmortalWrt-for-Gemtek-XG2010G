@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "an7581-nokia_xg-040g-md-common.dtsi"
+#include "an758x-nokia_xg-040g-ubi-parts.dtsi"
+
+/ {
+	model = "Gemtek XG2010G";
+	compatible = "gemtek,xg2010g", "airoha,an7581", "airoha,en7581";
+
+	memory@80000000 {
+		reg = <0x0 0x80000000 0x0 0x40000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 earlycon ubi.mtd=ubi root=ubi:rootfs rootfstype=ubifs";
+	};
+};
+
+&pcie0 { status = "disabled"; };
+&pcie1 { status = "disabled"; };
+&pcie2 { status = "disabled"; };
+&usb0 { status = "disabled"; };
+&usb1 { status = "disabled"; };
+&mmc0 { status = "disabled"; };

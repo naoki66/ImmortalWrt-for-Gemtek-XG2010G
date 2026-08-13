@@ -188,3 +188,12 @@ define Device/nokia_xg-040g-md-ubi
   ARTIFACTS := bl31-uboot.fip preloader.bin
 endef
 TARGET_DEVICES += nokia_xg-040g-md-ubi
+
+define Device/gemtek_xg2010g
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := XG2010G
+  DEVICE_DTS := an7581-gemtek-xg2010g
+  DEVICE_PACKAGES := kmod-leds-gpio kmod-gpio-button-hotplug
+  SUPPORTED_DEVICES := gemtek,xg2010g
+endef
+TARGET_DEVICES += gemtek_xg2010g

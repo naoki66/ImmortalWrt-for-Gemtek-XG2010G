@@ -1,93 +1,64 @@
-<img src="https://avatars.githubusercontent.com/u/53193414?s=200&v=4" alt="logo" width="200" height="200" align="right">
+# ImmortalWrt for Gemtek XG2010G
 
-# Project ImmortalWrt
+基于 [ImmortalWrt](https://github.com/immortalwrt/immortalwrt) 上游的 Gemtek XG2010G 移植项目。
 
-ImmortalWrt is a fork of [OpenWrt](https://openwrt.org), with more packages ported, more devices supported, default optimized profiles and localization modifications for mainland China users.<br/>
-Compared to upstream, we allow to use (non-upstreamable) modifications/hacks to provide better feature/performance/support.
+> 当前状态：移植基线阶段。设备树、分区和镜像定义已建立；首次刷写前必须使用串口确认启动参数，并完整备份原厂 NAND 分区。
 
-Default login address: http://192.168.1.1 or http://immortalwrt.lan, username: __root__, password: _none_.
+## 硬件概览
 
-## Download
-Built firmware images are available for many architectures and come with a package selection to be used as WiFi home router. To quickly find a factory image usable to migrate from a vendor stock firmware to ImmortalWrt, try the *Firmware Selector*.
+| 项目 | 已确认信息 |
+| --- | --- |
+| SoC | Airoha/Econet AN7581 / EN7581 |
+| CPU | 4x Cortex-A53，ARM64 |
+| 内存 | 1 GiB DDR4-2666，起始地址 `0x80000000` |
+| 闪存 | Winbond W25N04K SPI-NAND，512 MiB |
+| 10G 网口 | RTL8261N，MDIO 地址 5 和 8 |
+| 2.5G 网口 | Airoha EN8811H，MDIO 地址 `0xf` |
+| 1G 网口 | 内置交换机 ePHY，实测仅 LAN4 出线 |
+| PON | EN7572 BOSA，原厂 XGSPON |
+| 无线/USB/eMMC | 当前硬件资料显示无可用模块或物理接口 |
 
-- [ImmortalWrt Firmware Selector](https://firmware-selector.immortalwrt.org/)
+## 端口与启动注意事项
 
-If your device is supported, please follow the **Info** link to see install instructions or consult the support resources listed below.
+- phy@5 对应原厂 `eth0.8`，phy@8 对应 `eth0.7`；两者的物理 LAN 编号仍建议上机复核。
+- `serdes_ethernet=411` 是原厂实机参数，不要照抄旧资料中的 `421`。
+- 原厂 NAND 布局与本项目 UBI 布局不同。刷写前备份 `bootloader`、`uenv`、`dsd`、`tclinux_slave` 和 `art`。
+- U-Boot 可能通过 `bootflag` 在主/备系统间切换。任何升级操作都应保留可恢复的串口/TFTP/HTTP Recovery 路径。
+- XG2010G 的 PON 模式、BOSA 校准、SLIC/语音和 10G PHY 链路尚未在 ImmortalWrt 上完成实机验证。
 
-## Development
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case sensitive filesystem required). Cygwin is unsupported because of the lack of a case sensitive file system.<br/>
+## 移植资料
 
-  ### Requirements
-  To build with this project, Debian 11 is preferred. And you need use the CPU based on AMD64 architecture, with at least 4GB RAM and 25 GB available disk space. Make sure the __Internet__ is accessible.
+- [XG2010G 逆向分析](https://github.com/naoki66/ImmortalWrt-for-Gemtek-XG2010G/blob/master/XG2010G-ANALYSIS.md)
+- [DTS 逆向说明](https://github.com/naoki66/ImmortalWrt-for-Gemtek-XG2010G/blob/master/XG2010G-DTS-REVERSE.md)
+- [固件重打包说明](https://github.com/naoki66/ImmortalWrt-for-Gemtek-XG2010G/blob/master/XG2010G-FIRMWARE-REPACK.md)
+- 原始解包与 SDK 参考资料位于本地工作目录的 `XG2010G-fw-mod`，不直接纳入固件构建输入。
 
-  The following tools are needed to compile ImmortalWrt, the package names vary between distributions.
+## 本地构建
 
-  - Here is an example for Debian/Ubuntu users:<br/>
-    - Method 1:
-      <details>
-        <summary>Setup dependencies via APT</summary>
+请在 Debian/Ubuntu 或 WSL 的 Linux 原生文件系统中构建，不要在 `/mnt/c`、`/mnt/d` 等 Windows 挂载目录构建。
 
-        ```bash
-        sudo apt update -y
-        sudo apt full-upgrade -y
-        sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-          bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
-          g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
-          libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
-          libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano \
-          ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
-          python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
-          upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
-        ```
-      </details>
-    - Method 2:
-      ```bash
-      sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh)'
-      ```
+```bash
+sudo apt update
+sudo apt install build-essential clang gcc g++ binutils bzip2 gawk gettext git \
+  libncurses-dev libssl-dev python3 python3-setuptools rsync unzip wget \
+  xsltproc zlib1g-dev file which perl sed make
+git clone https://github.com/naoki66/ImmortalWrt-for-Gemtek-XG2010G.git
+cd ImmortalWrt-for-Gemtek-XG2010G
+./scripts/feeds update -a
+./scripts/feeds install -a
+make menuconfig
+make -j$(nproc) world
+```
 
-  Note:
-  - Do everything as an unprivileged user, not root, without sudo.
-  - Using CPUs based on other architectures should be fine to compile ImmortalWrt, but more hacks are needed - No warranty at all.
-  - You must __not__ have spaces or non-ascii characters in PATH or in the work folders on the drive.
-  - If you're using Windows Subsystem for Linux (or WSL), removing Windows folders from PATH is required, please see [Build system setup WSL](https://openwrt.org/docs/guide-developer/build-system/wsl) documentation.
-  - Using macOS as the host build OS is __not__ recommended. No warranty at all. You can get tips from [Build system setup macOS](https://openwrt.org/docs/guide-developer/build-system/buildroot.exigence.macosx) documentation.
-  - For more details, please see [Build system setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem) documentation.
+目标设备位于 `Airoha -> an7581 -> Gemtek XG2010G`，输出目录为 `bin/targets/airoha/an7581/`。
 
-  ### Quickstart
-  1. Run `git clone -b <branch> --single-branch --filter=blob:none https://github.com/immortalwrt/immortalwrt` to clone the source code.
-  2. Run `cd immortalwrt` to enter source directory.
-  3. Run `./scripts/feeds update -a` to obtain all the latest package definitions defined in feeds.conf / feeds.conf.default
-  4. Run `./scripts/feeds install -a` to install symlinks for all obtained packages into package/feeds/
-  5. Run `make menuconfig` to select your preferred configuration for the toolchain, target system & firmware packages.
-  6. Run `make` to build your firmware. This will download all sources, build the cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen applications for your target system.
+## GitHub Actions
 
-  ### Related Repositories
-  The main repository uses multiple sub-repositories to manage packages of different categories. All packages are installed via the OpenWrt package manager called opkg. If you're looking to develop the web interface or port packages to ImmortalWrt, please find the fitting repository below.
-  - [LuCI Web Interface](https://github.com/immortalwrt/luci): Modern and modular interface to control the device via a web browser.
-  - [ImmortalWrt Packages](https://github.com/immortalwrt/packages): Community repository of ported packages.
-  - [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically focused on (mesh) routing.
-  - [OpenWrt Video](https://github.com/openwrt/video): Packages specifically focused on display servers and clients (Xorg and Wayland).
+- `Build Firmware`：手动触发，执行依赖安装、feeds、配置和固件构建，并上传构建产物。
+- `Sync Upstream`：定时或手动将 `immortalwrt/immortalwrt` 的 `master` 合并到本仓库。
 
-## Support Information
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
-  ### Documentation
-  - [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-  - [User Guide](https://openwrt.org/docs/guide-user/start)
-  - [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-  - [Technical Reference](https://openwrt.org/docs/techref/start)
+Actions 构建只验证编译产物，不代表设备已经可以安全刷写；刷机前仍需串口验证 DTS、分区和启动链。
 
-  ### Support Community
-  - Support Chat: group [@ctcgfw_openwrt_discuss](https://t.me/ctcgfw_openwrt_discuss) on [Telegram](https://telegram.org/).
-  - Support Chat: group [#immortalwrt](https://matrix.to/#/#immortalwrt:matrix.org) on [Matrix](https://matrix.org/).
+## 许可证
 
-## License
-ImmortalWrt is licensed under [GPL-2.0-only](https://spdx.org/licenses/GPL-2.0-only.html).
-
-## Acknowledgements
-<table>
-  <tr>
-    <td><a href="https://dlercloud.com/"><img src="https://user-images.githubusercontent.com/22235437/111103249-f9ec6e00-8588-11eb-9bfc-67cc55574555.png" width="183" height="52" border="0" alt="Dler Cloud"></a></td>
-    <td><a href="https://www.jetbrains.com/"><img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_square.png" width="120" height="120" border="0" alt="JetBrains Black Box Logo logo"></a></td>
-    <td><a href="https://sourceforge.net/"><img src="https://sourceforge.net/sflogo.php?type=17&group_id=3663829" alt="SourceForge" width=200></a></td>
-  </tr>
-</table>
+本项目继承 ImmortalWrt 的 GPL-2.0-only 许可证。硬件分析资料和原厂 SDK 的版权归其原作者/版权所有者所有。
